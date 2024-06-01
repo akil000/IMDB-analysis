@@ -275,41 +275,53 @@ confusion_plot(cross_table = cross_table)
 
 
 #================================== DRZEWA DECYZYJNE=======================
-### bez wzmacniania wyszło około 75
+### BEZ WZMACNIANIA - 75%
+
+### 1, Parametr trials dla 10 000 danych(sprawdzane po za plikiem)
+# trials = 8  : 81.2 % # po za plikiem
+# trials = 10 : 82.3 % # po za plikiem
+# trials = 14 : 83.0 % # po za plikiem
+# trials = 15 : 83.3 % # po za plikiem
+# KOMENTARZ: widać, że dokładność się zwiększa wraz z parametrem trials
+
+
+### sprawdzam model dla wartości trials 16:20
+
+
 library(C50)
-#====== Krok 3 - budowa modelu ======
+
 drzewa_model <- list()
 pred_drzewa <- list()
 cross_table_drzewa <- list()
 accuracy <- NULL
+
 ## sprawdzam dla różnych wartości parametru trials
 
-for (i in 8:15){
-drzewa_model[[i-7]] <- C5.0(imdb_train, imdb_train_labels, trials = i)
+for (i in 16:20){
+drzewa_model[[i-15]] <- C5.0(imdb_train, imdb_train_labels, trials = i)
 
-#====== Krok 4 - ocena modelu======
+pred_drzewa[[i-15]] = predict(drzewa_model[[i-15]], imdb_test)
 
-pred_drzewa[[i-7]] = predict(drzewa_model[[i-7]], imdb_test)
-
-accuracy[i-7] = confusionMatrix(pred_drzewa[[i-7]], imdb_test_labels)$overall['Accuracy']
+accuracy[i-15] = confusionMatrix(pred_drzewa[[i-15]], imdb_test_labels)$overall['Accuracy']
 
 }
 accuracy
-accuracy_bez_wczytywania_modelu_drzewa = c(0.813, 0.825, 0.824)
-                                           
-#widać, że wyniki nie sięgaja wartości powyżej 83 %
+accuracy_bez_wczytywania_modelu_drzewa = c(0.8309295, 0.8369391, 0.828, 0.834, 0.834)
+     
+
+#widać, że wyniki nie sięgaja wartości powyżej 84 %
 
 ## "najlepszy"(to ze na teście wyszło najlepiej nie znaczy ze akurat ten parametr najlepszy) 
-##  najczęściej przyjmuje się trails = 10 co u nas także wydaje się być optymalnym  wyborem
+##  najlepszym wyborem wydaje się być wybranie trials w pograniczu 15
 
-cross_table_drzewa = CrossTable(pred_drzewa[[3]], imdb_test_labels,
+cross_table_drzewa = CrossTable(pred_drzewa[[2]], imdb_test_labels,
  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
  dnn = c('predicted', 'actual'))
 
 confusion_plot(cross_table_drzewa)
 
-## ramka danych z wynikami dla innych parametrów trials 
-trials_scores = data.frame(trials = seq(8,15), accuracy = accuracy_bez_wczytywania_modelu_drzewa)
+## ramka danych z wynikami dla innych parametrów trials 16:20
+trials_scores = data.frame(trials = seq(16,20), accuracy = accuracy_bez_wczytywania_modelu_drzewa)
 
 
 
