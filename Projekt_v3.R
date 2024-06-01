@@ -174,12 +174,12 @@ wordcloud(imdb_corpus_clean, max.words = 50,
 
 ### (?nwm czy to potrzebne?)
 # porównanie positive i negative
-positive = subset(imdb, sentiment=="positive")
-negative = subset(imdb, sentiment=="negative")
+positive = subset(imdb_corpus_clean, imdb$sentiment=="positive")
+negative = subset(imdb_corpus_clean, imdb$sentiment=="negative")
 
-wordcloud(positive$review, max.words = 50,
+wordcloud(positive, max.words = 50,
           random.order=FALSE, rot.per=0 ,colors=brewer.pal(10, "Dark2"))
-wordcloud(negative$review, max.words = 50,
+wordcloud(negative, max.words = 50,
           random.order=FALSE, rot.per=0 ,colors=brewer.pal(10, "Dark2"))
 # komentarz: ramka imdb nie jest wyczyszczona, więc pojawiły się słowa np: 'the'
 
