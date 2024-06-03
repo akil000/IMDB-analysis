@@ -1,14 +1,12 @@
-library(caret)
 #======= Krok 1 - zbieranie danych =======
 
 # informacje na stronie
 # https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews
 # http://ai.stanford.edu/~amaas/data/sentiment/
 
-#====== Funkcje rysunków =================================
-
+#======= Funkcje potrzebne do rysunków itp =======
+library(caret)
 ## przedstawienie cross table
-
 confusion_plot = function(cross_table){
 plt <- as.data.frame(cross_table)
 plt$t.x <- factor(plt$t.x, levels= levels(plt$t.x))
@@ -42,15 +40,15 @@ ggplot(data = data, aes(sentiment, fill = sentiment))+
 ## przedstawiać może np: liczebność recenzji o danym parametrze np:dlugosc recenzji, liczba znaków interpunkcyjnych
 parameters_review_plot = function(data, parameter, title){
     ggplot(data = data, aes(x = parameter, fill = factor(sentiment)))+
-    geom_bar()+
+    geom_bar(position = "dodge")+
     wyglad+
-    theme(panel.background = element_blank())+
+    theme(panel.background = element_blank(),
+          legend.title = element_blank())+
     labs(title =title)
 }
 
-#====== funkcje parametrów recenzji================
 
-## dlugosc recenzji
+## długość recenzji
 count_words = function(data){
   dlugosc_opinii <- NULL
   i=1
@@ -63,23 +61,25 @@ count_words = function(data){
 
 #====== Krok 2 - eksploracja i przygotowanie danych ======
 
-## Korzystamuy z 10 000 recenzji, na koniec będzie to skomentowane
+## Korzystamy z 10 000 recenzji, na koniec będzie to skomentowane
 
-setwd("C://Users//lukas//OneDrive//Pulpit//WPROWADZENIE DO AD//projekt")
+#setwd("ścieżka do folderu") 
 # importowanie danych do ramki
 imdb = read.csv("IMDB Dataset.csv", stringsAsFactors = FALSE)
-imdb = imdb[1:10000,]
 imdb = imdb[!duplicated(imdb), ]
 row.names(imdb) <- NULL ### reset indeksów
 
-#==============================ZMIAAAAAANA==================================================
+# pierwsze 10 000 zostawiamy
+imdb = imdb[1:10000,]
+
+# przyda się do rysunków
 imdb_copy =  imdb[ , ]
 imdb_copy$dlugosc_recenzji <- unlist(count_words(imdb))
 
 # struktura zbioru
 str(imdb)
 
-# konwersja positive/negative na factor
+# konwersja positive / negative na factor
 imdb$sentiment = factor(imdb$sentiment)
 
 # sprawdzamy co się zmieniło
@@ -148,9 +148,8 @@ as.character(imdb_corpus_clean[[85]])
 # tworzenie macierzy DTM
 imdb_dtm = DocumentTermMatrix(imdb_corpus_clean)
 
-#==============================ZMIAAAAAANA==================================================
-## tworzenie zbioru uczącego i testowego w stosunku 3:1
 
+## tworzenie zbioru uczącego i testowego w stosunku 3:1
 set.seed(123) ###
 train_sample = sample(length(imdb$review), floor(length(imdb$review) *0.75) )
 
@@ -167,13 +166,12 @@ prop.table(table(imdb_test_labels))
 
 
 ## chmura wyrazów
-#==============================ZMIAAAAAANA wygladu delikatnie==================================================
 library(wordcloud)
 wordcloud(imdb_corpus_clean, max.words = 50, 
           random.order=FALSE, rot.per=0 ,colors=brewer.pal(10, "Dark2"))
 
-### (?nwm czy to potrzebne?)
 # porównanie positive i negative
+
 positive = subset(imdb_corpus_clean, imdb$sentiment=="positive")
 negative = subset(imdb_corpus_clean, imdb$sentiment=="negative")
 
@@ -181,11 +179,10 @@ wordcloud(positive, max.words = 50,
           random.order=FALSE, rot.per=0 ,colors=brewer.pal(10, "Dark2"))
 wordcloud(negative, max.words = 50,
           random.order=FALSE, rot.per=0 ,colors=brewer.pal(10, "Dark2"))
-# komentarz: ramka imdb nie jest wyczyszczona, więc pojawiły się słowa np: 'the'
 
 
-## słowa, które wystąpiły co najmniej w 25 recenzjach w zbiorze uczącym
-imdb_freq_words = findFreqTerms(imdb_dtm_train, 25)
+## słowa, które wystąpiły co najmniej w 20 recenzjach w naszym zbiorze uczącym
+imdb_freq_words = findFreqTerms(imdb_dtm_train, 20)
 str(imdb_freq_words)
 
 ## macierz DTM tylko z tymi słowami
@@ -201,9 +198,12 @@ convert_counts = function(x){
 imdb_train = apply(imdb_dtm_freq_train, MARGIN = 2, convert_counts)
 imdb_test = apply(imdb_dtm_freq_test, MARGIN = 2, convert_counts)
 
+
+
 #====== Krok 3 - budowa modelu ======
 library(e1071)
-imdb_classifier = naiveBayes(imdb_train, imdb_train_labels, laplace = 0)
+imdb_classifier = naiveBayes(imdb_train, imdb_train_labels, laplace = 1)
+
 
 
 #====== Krok 4 - ocena modelu======
@@ -214,13 +214,17 @@ cross_table = CrossTable(imdb_test_pred, imdb_test_labels,
            prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
            dnn = c('predicted', 'actual'))
 
-confusionMatrix(imdb_test_pred, imdb_test_labels)['overall'] ### pokazuje m.in accuracy modelu
+confusion_plot(cross_table)
+
+## pokazuje m.in accuracy modelu
+confusionMatrix(imdb_test_pred, imdb_test_labels)['overall']
+
 
 #====================== rysunki =============================================
 
-##"Wykres zależnosci między długościa recenzji, a częstotliwości wystepowania"(tutaj ograniczyłem sie do długosci 30)
+##"Wykres zależnosci między długościa recenzji, a częstotliwości wystepowania"(tutaj ograniczyłem sie do długości 300 słów)
 library(dplyr)
-title = "Wykres zależnosci między długościa recenzji, a częstotliwości wystepowania"
+title = "Wykres zależnosci między długościa recenzji, a częstotliwości występowania"
 parameters_review_plot(imdb_copy %>% filter(dlugosc_recenzji < 300), 
                        (imdb_copy %>% filter(dlugosc_recenzji < 300))$dlugosc_recenzji,title)
     
@@ -229,6 +233,7 @@ data_proportion_plot(imdb_copy, sentiment)
 
 ## macierz wyników
 confusion_plot(cross_table = cross_table)
+
 
 
 #====== Krok 5 - dopracowanie  modelu======
@@ -240,62 +245,66 @@ confusion_plot(cross_table = cross_table)
 #   (domyślnie dla 10 000 dajemy parametr 10 czyli proporcja 1/1000)
 
 
-### 1, Parametr Laplace dla 10 000 danych
-# Laplace =   0 : 41.1 + 43.0 = 84.1 %
-# Laplace = 0.5 : 41.2 + 42.7 = 83.9 % 
-# Laplace =   1 : 41.4 + 42.6 = 84.0 %
-# Laplace =   2 : 41.6 + 42.6 = 84.2 %
-# Laplace =   5 : 41.9 + 42.5 = 84.4 %
-# Laplace =  10 : 42.3 + 41.6 = 83.9 %
-# Laplace =  20 : 42.9 + 41.1 = 84.0 %
-# KOMENTARZ: Nic znacznie lepszego, wszystko ok 84 %, ewentualnie może Laplace: 5
+### 1. Frequency dla ilości danych 10 000, w nawiasie liczba słów w treningowym
+# 10 (7171  słów): 44.2 + 40.7 = 84.9 %   OK
+#  5 (11110 słów): 44.9 + 40.5 = 85.4 %   OK
+# 15 (5533  słów): 44.0 + 41.0 = 85.0 %   OK
+# 20 (4516  słów): 44.1 + 41.0 = 85.1 %   OK   
+# 25 (3939  słów): 43.8 + 41.1 = 84.9 %   OK
+# 30 (3472  słów): 43.6 + 41.2 = 84.8 %   OK
+# KOMENTARZ: Freq 20 (liczy się dużo szybciej niż 5) 
 
-### 2, Liczba danych
-# Dane: 10 000, Laplace = 0 : 41.1 + 43   = 84.1 %
-# Dane: 20 000, Laplace = 0 : 42.9 + 42.7 = 85.6 %
-# Dane: 50 000, Laplace = 0 : 43.1 + 41.8 = 84.9 % 
+### 2, Parametr Laplace dla 10 000 danych (Freq = 20)
+# Laplace =   0 : 44.1 + 41.0 = 85.1 %    OK     
+# Laplace = 0.5 : 44.1 + 41.0 = 85.1 %    OK
+# Laplace =   1 : 44.2 + 41.0 = 85.2 %    OK
+# Laplace =   5 : 44.8 + 40.3 = 85.1 %    OK
+# Laplace =  10 : 45.6 + 39.3 = 84.9 %    OK
+# KOMENTARZ: Nic znacznie lepszego, wszystko ok 85 %, ewentualnie może Laplace: 1
+
+### 3, Liczba danych (Laplace 0, Freq ten sam procent wiadomości)
+# Dane: 10 000, Freq  20 : 44.1 + 41.0 = 85.1 %     OK
+# Dane: 20 000, Freq  40 : 42.9 + 42.8 = 85.7 %     OK
+# Dane: 50 000, Freq 100 : 41.8 + 42.4 = 84.2 %     OK
 # KOMENTARZ: Znaczącej poprawy nie widać, wzrost przy 20 000 wynika z innych danych
 
-### 3. Frequency dla ilości danych 10 000, w nawiasie liczba słów w treningowym
-# 10 (7186  słów): 41.1 + 43   = 84.1 %
-#  5 (11088 słów): 41.6 + 41.8 = 83.4 %
-# 15 (5537  słów): 41.2 + 43.1 = 84.3 %
-# 20 (4566  słów): 41.3 + 43.2 = 84.5 %
-# 25 (3968  słów): 41.4 + 43.2 = 84.6 %
-# 30 (3485  słów): 40.8 + 43.4 = 84.2 %
-# 35 (3128  słów): 40.8 + 43.2 = 84.0 %
-# KOMENTARZ: Freq 25 
 
-### Sprawdzam dla może najlepszych parametrów:
-# Dane: 10 000, Laplace: 5, Freq: 25
-# Wynik: 41.4 + 42.8 = 84.2 %
-
-### WYBÓR: 10 000, Laplace: 0, Freq: 25
-# Wynik: 41.4 + 43.2 = 84.6 %
+### WYBÓR: 10 000, Laplace: 1, Freq: 20
+# Wynik: 44.2 + 41.0 = 85.2 %    OK
 
 
-#================================== DRZEWA DECYZYJNE=======================
-### BEZ WZMACNIANIA - 75%
+#====== Drzewa decyzyjne ======
 
-### 1, Parametr trials dla 10 000 danych(sprawdzane po za plikiem)
-# trials = 8  : 81.2 % # po za plikiem
-# trials = 10 : 82.3 % # po za plikiem
-# trials = 14 : 83.0 % # po za plikiem
-# trials = 15 : 83.3 % # po za plikiem
+### BEZ WZMACNIANIA - 78.92 %   OK
+
+### Parametr trials dla 10 000 danych
+# trials = 8  : 81.6 %    OK 
+# trials = 10 : 80.6 %    OK
+# trials = 12 : 81.7 %    OK
+# trials = 13 : 82.2 %    OK    
+# trials = 14 : 82.3 %    OK
+# trials = 15 : 82.1 %    OK 
 # KOMENTARZ: widać, że dokładność się zwiększa wraz z parametrem trials
+
+# 16-20
+accuracy_bez_wczytywania_modelu_drzewa = c(0.8272, 0.8216, 0.8276, 0.8284, 0.8284)
+
+
+## Model do testowania
+library(C50)
+
+drzewo <- C5.0(imdb_train, imdb_train_labels)
+#summary(drzewo)
+predykcja = predict(drzewo, imdb_test)
+
+confusionMatrix(predykcja, imdb_test_labels)$overall['Accuracy']
 
 
 ### sprawdzam model dla wartości trials 16:20
-
-
-library(C50)
-
 drzewa_model <- list()
 pred_drzewa <- list()
 cross_table_drzewa <- list()
 accuracy <- NULL
-
-## sprawdzam dla różnych wartości parametru trials
 
 for (i in 16:20){
 drzewa_model[[i-15]] <- C5.0(imdb_train, imdb_train_labels, trials = i)
@@ -305,14 +314,14 @@ pred_drzewa[[i-15]] = predict(drzewa_model[[i-15]], imdb_test)
 accuracy[i-15] = confusionMatrix(pred_drzewa[[i-15]], imdb_test_labels)$overall['Accuracy']
 
 }
-accuracy
-accuracy_bez_wczytywania_modelu_drzewa = c(0.8309295, 0.8369391, 0.828, 0.834, 0.834)
-     
 
-#widać, że wyniki nie sięgaja wartości powyżej 84 %
+accuracy
+accuracy_bez_wczytywania_modelu_drzewa = c(0.8272, 0.8216, 0.8276, 0.8284, 0.8284)
+
+# widać, że wyniki nie sięgaja wartości powyżej 83 %
 
 ## "najlepszy"(to ze na teście wyszło najlepiej nie znaczy ze akurat ten parametr najlepszy) 
-##  najlepszym wyborem wydaje się być wybranie trials w pograniczu 15
+##  najlepszym wyborem wydaje się być wybranie trials w pograniczu 14
 
 cross_table_drzewa = CrossTable(pred_drzewa[[2]], imdb_test_labels,
  prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
@@ -322,8 +331,3 @@ confusion_plot(cross_table_drzewa)
 
 ## ramka danych z wynikami dla innych parametrów trials 16:20
 trials_scores = data.frame(trials = seq(16,20), accuracy = accuracy_bez_wczytywania_modelu_drzewa)
-
-
-
-
-
