@@ -6,3 +6,9 @@ The data was retrived from Kaggle. You can find the original [here](https://www.
 For more dataset information, please go through the following [link](http://ai.stanford.edu/~amaas/data/sentiment/).
 ## Results 
 The presentation about results can be found in [file](report_end.pdf).
+
+## References
+> **Maas, Andrew L.  and  Daly, Raymond E.  and  Pham, Peter T.  and  Huang, Dan  and  Ng, Andrew Y.  and  Potts, Christopher (2011).**  
+> *Learning Word Vectors for Sentiment Analysis*.  
+> Proceedings of the 49th Annual Meeting of the Association for Computational Linguistics: Human Language Technologies, pp. 142-150.  
+> [Read the paper](http://www.aclweb.org/anthology/P11-1015) 📖 
