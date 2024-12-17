@@ -5,7 +5,7 @@ The project was completed as part of the "Introduction to data analysis" course.
 The data was retrived from Kaggle. You can find the original [here](https://www.kaggle.com/datasets/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews).
 For more dataset information, please go through the following [link](http://ai.stanford.edu/~amaas/data/sentiment/).
 ## Results 
-The presentation about results can be found in [file](report_eng.pdf).
+The presentation about results can be found in [file](Report_eng.pdf).
 
 ## References
 > **Maas, Andrew L.  and  Daly, Raymond E.  and  Pham, Peter T.  and  Huang, Dan  and  Ng, Andrew Y.  and  Potts, Christopher (2011).**  
